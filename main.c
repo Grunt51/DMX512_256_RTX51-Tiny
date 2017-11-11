@@ -8,9 +8,9 @@
 #include <stdio.h>
 #include <string.h>
 sbit SN75176_DE = P1 ^ 2;
-void job_0() _task_ 0 {
+void startup_task() _task_ 0 {
   unsigned short i = 0;
-  SP = 0x80;         //设置栈顶在80H位置
+  SP = 0x30;         //设置栈顶在30H位置
   ES = 1;            //允许串口1中断
   PS = 1;            //串口1中断最高优先级
   IP2 |= 0x01;       //串口2最高中断优先级	// PS2 = 1;
@@ -26,14 +26,13 @@ void job_0() _task_ 0 {
   }
   os_create_task(1);
   os_create_task(2);
-	os_create_task(3);
+  os_create_task(3);
   os_delete_task(0);
 }
-void job_1() _task_ 1 {
+void process_serial_cmds() _task_ 1 {
   unsigned char i = 0;
   while (1) {
     os_wait(K_SIG, 0, 0);
-    ET0 = 0;
     if (1 == rdata_complete_flag) {
       rdata_complete_flag = 0;
       for (i = 0; i < 19; i++) {
@@ -174,30 +173,29 @@ void job_1() _task_ 1 {
         }
       }
     }
-    ET0 = 1;
+    os_switch_task();
   }
 }
-void job_2() _task_ 2 {
+void send_DMX512_signal() _task_ 2 {
   while (1) {
-    os_wait(K_TMO, 100, 0);
     //判断静音状态并指定输出DMX信号数组
     if (light_all_mute == MUTE_ON) {
       send_signal(master_to_slave_off);
     } else if (light_all_mute == MUTE_OFF) {
       send_signal(send_data_DMX512);
     }
+    os_switch_task();
   }
 }
-void job_3() _task_ 3 {
+void horse_race_lamp() _task_ 3 {
   while (1) {
     os_wait(K_SIG, 0, 0);
-    ET0 = 0;
     if (1 == run_change_flag) {
       run_change_flag = 0;
       Load_data_quick();
       sprintf(feedfack_information, "EN=%03hd\r\n", (short)iap_address_num);
       uart_send_str(feedfack_information); //返回切换到的EPROM序号
     }
-    ET0 = 1;
+    os_switch_task();
   }
 }

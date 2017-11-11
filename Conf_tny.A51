@@ -36,7 +36,7 @@ INT_REGBANK	EQU	1	; default is Registerbank 1
 INT_CLOCK	EQU	10000	; default is 10000 cycles
 ;
 ;  Define Round-Robin Timeout in Hardware-Timer ticks.
-TIMESHARING	EQU     5	; default is 5 Hardware-Timer ticks.
+TIMESHARING	EQU     0	; default is 5 Hardware-Timer ticks.
 ;		                ; 0 disables Round-Robin Task Switching
 ;
 ;  Long User Interrupt Routines: set to 1 if your application contains 
