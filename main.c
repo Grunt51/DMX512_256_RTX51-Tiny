@@ -26,6 +26,7 @@ void job_0() _task_ 0 {
   }
   os_create_task(1);
   os_create_task(2);
+	os_create_task(3);
   os_delete_task(0);
 }
 void job_1() _task_ 1 {
