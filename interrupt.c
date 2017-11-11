@@ -1,7 +1,7 @@
 #include "UART.h"
-#include <rtx51tny.h>
 #include "interrupt.h"
 #include <STC15.H>
+#include <rtx51tny.h>
 #include <stdio.h>
 #include <string.h>
 unsigned int code IAP_ADDRESS[] = {
@@ -26,7 +26,8 @@ unsigned char *send_str_2;       //串口2用于发送信息的数组指针
 unsigned short send_data_end_flag_2 =
     UART_STATUS_READY; //串口2发送信息结束标志以及数组指针偏移量
 unsigned char light_group = LIGHT_NUM_MIN;   // DMX512通道翻页选择	0~15
-unsigned short light_group_true;             //灯组计算中间信息
+unsigned short light_group_true = 0;         //灯组计算中间信息
+unsigned short current_light_num;            //当前控制通道
 unsigned char spark_cycle = SPARK_CYCLE_MIN; //频闪周期
 unsigned short spark_cycle_true;             //频闪周期实际值
 unsigned char spark_PWM = SPARK_PWM_MAX / 2; //频闪占空比 0~10
@@ -44,6 +45,7 @@ unsigned short timer_4_count = 0;              //定时器4延时循环计数
 unsigned char light_all_mute = MUTE_OFF;        //灯组静音标志
 char g_command[32];                             //全局命令字符串
 char b_command[32];                             //缓冲命令字符串
+short b_command_data, b_command_data_2;         //全局命令数据
 unsigned char b_command_count;                  //缓冲字符串下标位置
 unsigned char auto_status = AUTO_STATUS_OFF;    //轮询状态标志位
 unsigned char auto_start = IAP_ADDRESS_NUM_Min; //轮询起始位
@@ -55,6 +57,7 @@ unsigned char rdata_complete_flag;  //字符串接收完成处理标志位
 unsigned char spark_change_flag;    //频闪状态翻转标志位
 unsigned char run_change_flag;      //走马灯切换EEPROM标志位
 unsigned char gradient_change_flag; //渐变数据总偏移量标志位
+char *p_b_buffer;                   //字符串中关键字指针
 char code *receive_keywords[] = {"FDS",    "FDN",  "SLTS", "SLTN", "SLPWMS",
                                  "SLPWMN", "GCTS", "GCTN", "WTS",  "WTN",
                                  "SF",     "EUW",  "RD",   "RUN",  "LG",
@@ -74,7 +77,7 @@ char code *send_key_words_data[] = {
     "MUTE=%03hd",     "EN=%03hd\r\n", "LOAD=%03hd",   "SAVE=%03hd",
 };
 //定时器0中断处理程序
-//void timer_0(void) interrupt 1 {
+// void timer_0(void) interrupt 1 {
 //  if (spark_PWM == SPARK_PWM_MAX) {
 //    send_data_DMX512 = master_to_slave;
 //  } else if (spark_PWM == SPARK_PWM_MIN) {
@@ -120,7 +123,7 @@ void uart_1(void) interrupt 4 {
       b_command_count = 0;
       strcpy(g_command, b_command); //将缓冲数组装入到全局命令数组
       rdata_complete_flag = 1;
-			isr_send_signal(1);
+      isr_send_signal(1);
     }
   }
 }
@@ -180,6 +183,7 @@ void timer_4(void) interrupt 20 {
     timer_4_count++;
   } else {
     run_change_flag = 1;
+    isr_send_signal(3);
     timer_4_count = 0;
     //如果状态轮询到中止位，装入初始值
     if (iap_address_num == auto_stop) {

@@ -1,6 +1,3 @@
-#include "DMX512.h"
-#include "Delay.h"
-#include "EEPROM.H"
 #include "UART.h"
 #include "interrupt.h"
 #include <STC15.H>
@@ -110,8 +107,4 @@ void send_feedfack_information(unsigned char message_flag) {
     }
   }
   uart_send_str(feedfack_information);
-}
-void feedback_information(char *buf) {
-  strcpy(g_command, buf);
-  uart_send_str(g_command);
 }
