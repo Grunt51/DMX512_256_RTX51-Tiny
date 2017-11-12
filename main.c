@@ -10,7 +10,7 @@
 sbit SN75176_DE = P1 ^ 2;
 void startup_task() _task_ 0 {
   unsigned short i = 0;
-  SP = 0x30;         //设置栈顶在30H位置
+  SP = 0x80;         //设置栈顶在80H位置
   ES = 1;            //允许串口1中断
   PS = 1;            //串口1中断最高优先级
   IP2 |= 0x01;       //串口2最高中断优先级	// PS2 = 1;
@@ -59,12 +59,14 @@ void process_serial_cmds() _task_ 1 {
             spark_cycle = (unsigned char)b_command_data;
             //判断是否需要计算真实频闪周期以及频闪占空比以及是否需要开启定时器0中断
             if (spark_cycle == SPARK_CYCLE_MIN) {
+              os_delete_task(4);
               send_data_DMX512 = master_to_slave;
             } else {
               spark_cycle_true =
                   (unsigned short)spark_cycle * SPARK_PWM_RESOLUTION;
               spark_PWM_true =
                   (unsigned short)spark_cycle * (unsigned short)spark_PWM;
+              os_create_task(4);
             }
             if (3 == i) {
               uart_send_str(g_command);
@@ -195,6 +197,28 @@ void horse_race_lamp() _task_ 3 {
       Load_data_quick();
       sprintf(feedfack_information, "EN=%03hd\r\n", (short)iap_address_num);
       uart_send_str(feedfack_information); //返回切换到的EPROM序号
+    }
+    os_switch_task();
+  }
+}
+void process_spark() _task_ 4 {
+  while (1) {
+		os_wait(K_TMO, 4, 0);
+    if (spark_PWM == SPARK_PWM_MAX) {
+      send_data_DMX512 = master_to_slave;
+    } else if (spark_PWM == SPARK_PWM_MIN) {
+      send_data_DMX512 = master_to_slave_off;
+    } else {
+      if (timer_0_count < spark_PWM) {
+        timer_0_count++;
+        send_data_DMX512 = master_to_slave;
+      } else if (timer_0_count < spark_cycle) {
+        timer_0_count++;
+        send_data_DMX512 = master_to_slave_off;
+      } else {
+        timer_0_count = 1;
+        send_data_DMX512 = master_to_slave;
+      }
     }
     os_switch_task();
   }

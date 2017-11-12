@@ -4,6 +4,7 @@
 #include "UART.h"
 #include "interrupt.h"
 #include <STC15.H>
+#include <rtx51tny.h>
 // Break信号
 void Break(void) {
   P11 = 0;
@@ -66,9 +67,11 @@ void Load_data_quick(void) {
     IE2 |= 0x20; //开启定时器3中断
   }
   if (spark_cycle == SPARK_CYCLE_MIN) {
+    os_delete_task(4);
     send_data_DMX512 = master_to_slave;
   } else {
     spark_cycle_true = (unsigned short)spark_cycle * SPARK_PWM_RESOLUTION;
     spark_PWM_true = (unsigned short)spark_PWM * (unsigned short)spark_cycle;
+    os_create_task(4);
   }
 }

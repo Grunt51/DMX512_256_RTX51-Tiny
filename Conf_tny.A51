@@ -42,7 +42,7 @@ TIMESHARING	EQU     0	; default is 5 Hardware-Timer ticks.
 ;  Long User Interrupt Routines: set to 1 if your application contains 
 ;  user interrupt functions that may take longer than a hardware timer 
 ;  interval for execution.
-LONG_USR_INTR	EQU	0	; 0 user interrupts execute fast.
+LONG_USR_INTR	EQU	1	; 0 user interrupts execute fast.
 ;                               ; 1 user interrupts take long execution times.
 ;
 ;
