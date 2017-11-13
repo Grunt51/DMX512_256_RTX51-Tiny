@@ -203,7 +203,7 @@ void horse_race_lamp() _task_ 3 {
 }
 void process_spark() _task_ 4 {
   while (1) {
-		os_wait(K_TMO, 4, 0);
+		os_wait(K_TMO, 2, 0);
     if (spark_PWM == SPARK_PWM_MAX) {
       send_data_DMX512 = master_to_slave;
     } else if (spark_PWM == SPARK_PWM_MIN) {
